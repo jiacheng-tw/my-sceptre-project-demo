@@ -1,0 +1,44 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Parameters:
+  MasterUsername:
+    Type: String
+    Description: The username for the master user
+  MasterUserPassword:
+    Type: String
+    Description: The password for the master user
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The list of subnet IDs for the RDS instance
+Resources:
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties: 
+      AllocatedStorage: '20'
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: cf-db-instance-v1-a
+      DBName: postgres
+      Engine: postgres
+      EngineVersion: '14.8'
+      ManageMasterUserPassword: false
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      DBSubnetGroupName: !Ref MyDBSubnetGroup
+      AvailabilityZone: us-east-1a
+      MultiAZ: false
+      Tags:
+        - Key: name
+          Value: stack-test
+  MyDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: DB Subnet Group for MyDBInstance
+      DBSubnetGroupName: cf-db-subnet-group
+      SubnetIds: !Ref SubnetIds
+      Tags: 
+        - Key: name
+          Value: stack-test
+Outputs:
+  DBInstanceEndpoint:
+    Value: !GetAtt MyDBInstance.Endpoint.Address

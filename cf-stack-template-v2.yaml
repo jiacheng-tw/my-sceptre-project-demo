@@ -1,0 +1,56 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The list of subnet IDs for the RDS instance
+Resources:
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties: 
+      AllocatedStorage: '20'
+      DBInstanceClass: db.t3.micro
+      DBInstanceIdentifier: cf-db-instance-v2
+      DBName: postgres
+      Engine: postgres
+      EngineVersion: '14.8'
+      MasterUsername: !Sub "{{resolve:secretsmanager:${MySecret}::username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:${MySecret}::password}}"
+      DBSubnetGroupName: !Ref MyDBSubnetGroup
+      AvailabilityZone: us-east-1a
+      MultiAZ: false
+      Tags:
+        - Key: name
+          Value: stack-test
+  MyDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties: 
+      DBSubnetGroupDescription: DB Subnet Group for MyDBInstance
+      DBSubnetGroupName: cf-db-subnet-group
+      SubnetIds: !Ref SubnetIds
+      Tags: 
+        - Key: name
+          Value: stack-test
+  MySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties: 
+      Description: DB Secret for MyDBInstance
+      Name: cf-db-secret
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "masteruser"}'
+        GenerateStringKey: "password"
+        PasswordLength: 16
+        ExcludeCharacters: "\"'@/\\"
+      Tags: 
+        - Key: name
+          Value: stack-test
+  SecretDBInstanceAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref MySecret
+      TargetId: !Ref MyDBInstance
+      TargetType: AWS::RDS::DBInstance
+Outputs:
+  DBInstanceEndpoint:
+    Value: !GetAtt MyDBInstance.Endpoint.Address
