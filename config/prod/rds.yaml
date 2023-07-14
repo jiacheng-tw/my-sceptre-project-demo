@@ -1,0 +1,14 @@
+template:
+  path: rds.yaml
+  type: file
+parameters:
+  SubnetIds:
+    - subnet-0e6cad69d43c8126f
+    - subnet-0201ae6ff9cf6707b
+  DBInstanceClass: db.t3.micro
+  DBInstanceIdentifier: cf-db-instance-v3
+  DBName: postgres
+  Engine: postgres
+  EngineVersion: '14.8'
+dependencies:
+  - prod/secret.yaml

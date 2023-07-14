@@ -1,0 +1,2 @@
+template_bucket_name: sceptre-cf-template-prod
+env: prod

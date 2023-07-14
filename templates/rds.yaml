@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A sample template
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: The list of subnet IDs for the RDS instance
+  DBInstanceClass:
+    Type: String
+    Description: The compute and memory capacity of the DB instance
+  DBInstanceIdentifier:
+    Type: String
+    Description: A name for the DB instance
+  DBName:
+    Type: String
+    Description: The meaning of this parameter differs according to the database engine you use.
+  Engine:
+    Type: String
+    Description: The name of the database engine that you want to use for this DB instance.
+  EngineVersion:
+    Type: String
+    Description: The version number of the database engine to use.
+
+Resources:
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: '20'
+      DBInstanceClass: !Ref DBInstanceClass
+      DBInstanceIdentifier: !Ref DBInstanceIdentifier
+      DBName: !Ref DBName
+      Engine: !Ref Engine
+      EngineVersion: !Ref EngineVersion
+      MasterUsername: !Sub
+        - "{{resolve:secretsmanager:${MySecret}::username}}"
+        - MySecret: !ImportValue MySecret
+      MasterUserPassword: !Sub
+        - "{{resolve:secretsmanager:${MySecret}::password}}"
+        - MySecret: !ImportValue MySecret
+      DBSubnetGroupName: !Ref MyDBSubnetGroup
+      SourceRegion: us-east-1
+      AvailabilityZone: us-east-1c
+      MultiAZ: false
+      Tags:
+        - Key: name
+          Value: stack-test
+  MyDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: DB Subnet Group for MyDBInstance
+      DBSubnetGroupName: cf-db-subnet-group
+      SubnetIds: !Ref SubnetIds
+      Tags:
+        - Key: name
+          Value: stack-test
+  SecretDBInstanceAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !ImportValue MySecret
+      TargetId: !Ref MyDBInstance
+      TargetType: AWS::RDS::DBInstance
+Outputs:
+  DBInstanceEndpoint:
+    Value: !GetAtt MyDBInstance.Endpoint.Address
+    Export:
+      Name: DBInstanceEndpoint
